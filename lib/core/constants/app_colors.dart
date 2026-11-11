@@ -11,6 +11,9 @@ abstract final class MarsaColors {
   /// Primary interactive green — used for FAB, save buttons, success indicators.
   static const Color primaryGreen = Color(0xFF25D366);
 
+  /// Emerald green accent — used for wide OCR action buttons, copy badges, and link highlights.
+  static const Color emeraldPrimary = Color(0xFF00A884);
+
   /// Dark green accent — used for app bar, active tabs, high-priority cards.
   static const Color darkGreen = Color(0xFF128C7E);
 

@@ -17,7 +17,7 @@ enum PayloadType {
 ///
 /// Responsibilities:
 ///   1. Extract the first valid URL from noisy shared text
-///      (e.g., Facebook wraps URLs with "Look at this post: <url>").
+///      (e.g., Facebook wraps URLs with `Look at this post: <url>`).
 ///   2. Strip all known tracking query parameters:
 ///      fbclid, igsh, si, gclid, utm_source, utm_medium, utm_campaign,
 ///      utm_term, utm_content, ref, feature.
@@ -67,6 +67,20 @@ class PayloadSanitizer {
   static String? extractUrl(String rawText) {
     final match = _urlPattern.firstMatch(rawText);
     return match?.group(0);
+  }
+
+  /// Extracts ALL valid URLs from [rawText], returning an empty list if none found.
+  ///
+  /// Example:
+  /// ```
+  /// extractAllUrls('Visit https://a.com and https://b.com')
+  /// // Returns: ['https://a.com', 'https://b.com']
+  /// ```
+  static List<String> extractAllUrls(String rawText) {
+    return _urlPattern
+        .allMatches(rawText)
+        .map((m) => m.group(0)!)
+        .toList();
   }
 
   /// Strips all tracking query parameters from a [url].
@@ -137,6 +151,7 @@ class PayloadSanitizer {
   /// Returns a [SanitizedPayload] containing:
   ///   - The detected [PayloadType].
   ///   - The clean URL (if applicable), or null for text/image payloads.
+  ///   - All clean URLs found in the text (for multi-link messages).
   ///   - The original raw text preserved as-is.
   static SanitizedPayload sanitize(String rawText, {String? filePath}) {
     final type = detectType(rawText, filePath: filePath);
@@ -145,10 +160,18 @@ class PayloadSanitizer {
       final rawUrl = extractUrl(rawText);
       final cleanUrl =
           rawUrl != null ? stripTrackingParams(rawUrl) : null;
+
+      // Extract and clean ALL URLs from the text
+      final allRawUrls = extractAllUrls(rawText);
+      final cleanUrls = allRawUrls
+          .map((url) => stripTrackingParams(url))
+          .toList();
+
       return SanitizedPayload(
         type: type,
         rawText: rawText,
         cleanUrl: cleanUrl,
+        cleanUrls: cleanUrls,
         filePath: filePath,
       );
     }
@@ -157,6 +180,7 @@ class PayloadSanitizer {
       type: type,
       rawText: rawText,
       cleanUrl: null,
+      cleanUrls: const [],
       filePath: filePath,
     );
   }
@@ -165,7 +189,7 @@ class PayloadSanitizer {
 /// Immutable result of the [PayloadSanitizer.sanitize] pipeline.
 ///
 /// Contains the classified payload type, the original raw text,
-/// and the cleaned URL (if the payload contained a link).
+/// and the cleaned URL(s) (if the payload contained links).
 class SanitizedPayload {
   /// The detected type of the payload (url, text, or image).
   final PayloadType type;
@@ -173,8 +197,12 @@ class SanitizedPayload {
   /// The original unsanitized text exactly as shared by the user.
   final String rawText;
 
-  /// The clean URL with tracking parameters stripped, or null if not a URL payload.
+  /// The first clean URL with tracking parameters stripped, or null if not a URL payload.
   final String? cleanUrl;
+
+  /// All clean URLs found in the text with tracking parameters stripped.
+  /// Empty list for text/image payloads.
+  final List<String> cleanUrls;
 
   /// The local file path for image payloads, or null for text/URL payloads.
   final String? filePath;
@@ -183,6 +211,7 @@ class SanitizedPayload {
     required this.type,
     required this.rawText,
     required this.cleanUrl,
+    this.cleanUrls = const [],
     required this.filePath,
   });
 }

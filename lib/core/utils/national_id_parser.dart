@@ -131,6 +131,79 @@ class EgyptianNationalIdParser {
       isValid: true,
     );
   }
+
+  /// Normalizes Eastern Arabic numerals (٠-٩) to standard ASCII digits (0-9).
+  static String normalizeArabicDigits(String input) {
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    const english = '0123456789';
+    var output = input;
+    for (var i = 0; i < arabic.length; i++) {
+      output = output.replaceAll(arabic[i], english[i]);
+    }
+    return output;
+  }
+
+  /// Extracts and parses a 14-digit Egyptian National ID from noisy OCR text.
+  ///
+  /// Resiliently handles:
+  ///   - Eastern Arabic-Indic numerals (`٠١٢٣٤٥٦٧٨٩`).
+  ///   - Spaces, hyphens, and noise inserted by OCR engines (e.g., `2 95 06 15 21 0123 4`).
+  ///   - Multi-line document scans.
+  static NationalIdResult? extractAndParse(String text) {
+    if (text.trim().isEmpty) return null;
+
+    // 1. Quick attempt on direct text
+    final directResult = parse(text);
+    if (directResult != null) return directResult;
+
+    // 2. Normalize Eastern Arabic numerals
+    final normalized = normalizeArabicDigits(text);
+    final normalizedResult = parse(normalized);
+    if (normalizedResult != null) return normalizedResult;
+
+    // 3. Scan for digit clusters that may have spaces, hyphens, or dots between digits
+    final digitClusters = RegExp(r'(?:[23][\s\-\.]*[\d\s\-\.]{13,25})')
+        .allMatches(normalized);
+
+    for (final clusterMatch in digitClusters) {
+      final cluster = clusterMatch.group(0)!;
+      final rawDigits = cluster.replaceAll(RegExp(r'\D'), '');
+
+      // Check every 14-digit slice
+      if (rawDigits.length >= 14) {
+        for (var i = 0; i <= rawDigits.length - 14; i++) {
+          final candidate = rawDigits.substring(i, i + 14);
+          final parsed = parse(candidate);
+          if (parsed != null) return parsed;
+        }
+      }
+    }
+
+    // 4. Fallback: Extract all digits in the text if exactly 14 or contains 14
+    final allDigits = normalized.replaceAll(RegExp(r'\D'), '');
+    if (allDigits.length >= 14) {
+      for (var i = 0; i <= allDigits.length - 14; i++) {
+        final candidate = allDigits.substring(i, i + 14);
+        final parsed = parse(candidate);
+        if (parsed != null) return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  /// Formats a 14-digit National ID into visually grouped clusters for UI display:
+  /// `2 95 06 15 21 0123 4`
+  static String formatForDisplay(String nationalId) {
+    final clean = nationalId.replaceAll(RegExp(r'\D'), '');
+    if (clean.length != 14) return nationalId;
+    return '${clean[0]} ${clean.substring(1, 3)} ${clean.substring(3, 5)} ${clean.substring(5, 7)} ${clean.substring(7, 9)} ${clean.substring(9, 13)} ${clean[13]}';
+  }
+
+  /// Sanitizes National ID to strictly continuous 14 digits for clipboard copying.
+  static String sanitizeForClipboard(String nationalId) {
+    return nationalId.replaceAll(RegExp(r'\D'), '');
+  }
 }
 
 /// Gender decoded from the 13th digit of an Egyptian National ID.

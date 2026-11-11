@@ -40,4 +40,67 @@ class VaultUpdateDao extends DatabaseAccessor<VaultDatabase>
     );
     return updateEntry(id, companion);
   }
+
+  /// Atomically updates OCR extracted results and national ID metadata.
+  Future<bool> updateOcrResult(
+    int id, {
+    String? nationalId,
+    String? governorate,
+    DateTime? birthDate,
+    String? gender,
+    String? ocrExtractedText,
+    required String processingStatus,
+  }) {
+    final companion = VaultEntriesCompanion(
+      nationalId: Value(nationalId),
+      governorate: Value(governorate),
+      birthDate: Value(birthDate),
+      gender: Value(gender),
+      ocrExtractedText: Value(ocrExtractedText),
+      processingStatus: Value(processingStatus),
+    );
+    return updateEntry(id, companion);
+  }
+
+  /// Atomically updates OpenGraph link enrichment results.
+  Future<bool> updateEnrichmentResult(
+    int id, {
+    String? title,
+    String? description,
+    String? siteName,
+    String? thumbnailPath,
+    required String processingStatus,
+  }) {
+    final companion = VaultEntriesCompanion(
+      title: Value(title),
+      description: Value(description),
+      siteName: Value(siteName),
+      thumbnailPath: Value(thumbnailPath),
+      processingStatus: Value(processingStatus),
+    );
+    return updateEntry(id, companion);
+  }
+
+  /// Returns all entries with cleanUrl != null that are pending enrichment.
+  Future<List<VaultEntry>> getPendingEnrichmentEntries() {
+    return (select(vaultEntries)
+          ..where((e) =>
+              e.cleanUrl.isNotNull() &
+              (e.processingStatus.equals('pending') |
+                  e.processingStatus.equals('pendingEnrichment'))))
+        .get();
+  }
+
+  /// Clears thumbnailPath references across all vault entries when cache is purged.
+  /// Enforces Trap 3 Guard: avoids broken image paths in UI cards.
+  Future<int> clearAllThumbnails() {
+    return (update(vaultEntries)
+          ..where((tbl) => tbl.thumbnailPath.isNotNull()))
+        .write(const VaultEntriesCompanion(thumbnailPath: Value(null)));
+  }
+
+  /// Atomically updates the stored file path for an entry (e.g. after at-rest encryption).
+  Future<bool> updateFilePath(int id, String newFilePath) {
+    return updateEntry(id, VaultEntriesCompanion(filePath: Value(newFilePath)));
+  }
 }

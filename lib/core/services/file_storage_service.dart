@@ -45,12 +45,39 @@ class FileStorageService {
   Future<String> copyToVault(String sourcePath) async {
     final vaultDir = await getOrCreateVaultDirectory();
     final ext = p.extension(sourcePath);
-    final targetFileName = '${_uuid.v4()}${ext.isNotEmpty ? ext : ".bin"}';
+    final base = p.basenameWithoutExtension(sourcePath);
+    final cleanBase = base.replaceAll(RegExp(r'[^\w\s\.-]'), '_').trim();
+    final uniquePrefix = _uuid.v4().substring(0, 8);
+    final targetFileName = cleanBase.isNotEmpty
+        ? '${uniquePrefix}_$cleanBase${ext.isNotEmpty ? ext : ".bin"}'
+        : '${_uuid.v4()}${ext.isNotEmpty ? ext : ".bin"}';
     final targetPath = p.join(vaultDir.path, targetFileName);
 
     final sourceFile = File(sourcePath);
-    await sourceFile.copy(targetPath);
+    try {
+      await sourceFile.copy(targetPath);
+    } catch (_) {
+      final bytes = await sourceFile.readAsBytes();
+      final targetFile = File(targetPath);
+      await targetFile.writeAsBytes(bytes, flush: true);
+    }
 
     return targetPath;
+  }
+
+  /// Safely deletes a file from the private vault sandbox.
+  ///
+  /// Returns true if file was deleted, false otherwise.
+  Future<bool> deleteFile(String path) async {
+    try {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+        return true;
+      }
+    } catch (_) {
+      // Ignore failures to delete non-existent or inaccessible files
+    }
+    return false;
   }
 }

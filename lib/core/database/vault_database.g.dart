@@ -86,6 +86,17 @@ class $VaultEntriesTable extends VaultEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _siteNameMeta = const VerificationMeta(
+    'siteName',
+  );
+  @override
+  late final GeneratedColumn<String> siteName = GeneratedColumn<String>(
+    'site_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _thumbnailPathMeta = const VerificationMeta(
     'thumbnailPath',
   );
@@ -194,6 +205,7 @@ class $VaultEntriesTable extends VaultEntries
     filePath,
     title,
     description,
+    siteName,
     thumbnailPath,
     nationalId,
     governorate,
@@ -260,6 +272,12 @@ class $VaultEntriesTable extends VaultEntries
           data['description']!,
           _descriptionMeta,
         ),
+      );
+    }
+    if (data.containsKey('site_name')) {
+      context.handle(
+        _siteNameMeta,
+        siteName.isAcceptableOrUnknown(data['site_name']!, _siteNameMeta),
       );
     }
     if (data.containsKey('thumbnail_path')) {
@@ -365,6 +383,10 @@ class $VaultEntriesTable extends VaultEntries
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      siteName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}site_name'],
+      ),
       thumbnailPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}thumbnail_path'],
@@ -436,6 +458,9 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
   /// [Sprint 2] Page description from OpenGraph metadata.
   final String? description;
 
+  /// [Sprint 5] Site or publisher name extracted from OpenGraph or domain.
+  final String? siteName;
+
   /// [Sprint 2] Local cached path for OpenGraph thumbnail image.
   final String? thumbnailPath;
 
@@ -472,6 +497,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
     this.filePath,
     this.title,
     this.description,
+    this.siteName,
     this.thumbnailPath,
     this.nationalId,
     this.governorate,
@@ -499,6 +525,9 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
     }
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || siteName != null) {
+      map['site_name'] = Variable<String>(siteName);
     }
     if (!nullToAbsent || thumbnailPath != null) {
       map['thumbnail_path'] = Variable<String>(thumbnailPath);
@@ -543,6 +572,9 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      siteName: siteName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(siteName),
       thumbnailPath: thumbnailPath == null && nullToAbsent
           ? const Value.absent()
           : Value(thumbnailPath),
@@ -582,6 +614,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
       filePath: serializer.fromJson<String?>(json['filePath']),
       title: serializer.fromJson<String?>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
+      siteName: serializer.fromJson<String?>(json['siteName']),
       thumbnailPath: serializer.fromJson<String?>(json['thumbnailPath']),
       nationalId: serializer.fromJson<String?>(json['nationalId']),
       governorate: serializer.fromJson<String?>(json['governorate']),
@@ -604,6 +637,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
       'filePath': serializer.toJson<String?>(filePath),
       'title': serializer.toJson<String?>(title),
       'description': serializer.toJson<String?>(description),
+      'siteName': serializer.toJson<String?>(siteName),
       'thumbnailPath': serializer.toJson<String?>(thumbnailPath),
       'nationalId': serializer.toJson<String?>(nationalId),
       'governorate': serializer.toJson<String?>(governorate),
@@ -624,6 +658,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
     Value<String?> filePath = const Value.absent(),
     Value<String?> title = const Value.absent(),
     Value<String?> description = const Value.absent(),
+    Value<String?> siteName = const Value.absent(),
     Value<String?> thumbnailPath = const Value.absent(),
     Value<String?> nationalId = const Value.absent(),
     Value<String?> governorate = const Value.absent(),
@@ -641,6 +676,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
     filePath: filePath.present ? filePath.value : this.filePath,
     title: title.present ? title.value : this.title,
     description: description.present ? description.value : this.description,
+    siteName: siteName.present ? siteName.value : this.siteName,
     thumbnailPath: thumbnailPath.present
         ? thumbnailPath.value
         : this.thumbnailPath,
@@ -668,6 +704,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      siteName: data.siteName.present ? data.siteName.value : this.siteName,
       thumbnailPath: data.thumbnailPath.present
           ? data.thumbnailPath.value
           : this.thumbnailPath,
@@ -700,6 +737,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
           ..write('filePath: $filePath, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('siteName: $siteName, ')
           ..write('thumbnailPath: $thumbnailPath, ')
           ..write('nationalId: $nationalId, ')
           ..write('governorate: $governorate, ')
@@ -722,6 +760,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
     filePath,
     title,
     description,
+    siteName,
     thumbnailPath,
     nationalId,
     governorate,
@@ -743,6 +782,7 @@ class VaultEntry extends DataClass implements Insertable<VaultEntry> {
           other.filePath == this.filePath &&
           other.title == this.title &&
           other.description == this.description &&
+          other.siteName == this.siteName &&
           other.thumbnailPath == this.thumbnailPath &&
           other.nationalId == this.nationalId &&
           other.governorate == this.governorate &&
@@ -762,6 +802,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
   final Value<String?> filePath;
   final Value<String?> title;
   final Value<String?> description;
+  final Value<String?> siteName;
   final Value<String?> thumbnailPath;
   final Value<String?> nationalId;
   final Value<String?> governorate;
@@ -779,6 +820,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
     this.filePath = const Value.absent(),
     this.title = const Value.absent(),
     this.description = const Value.absent(),
+    this.siteName = const Value.absent(),
     this.thumbnailPath = const Value.absent(),
     this.nationalId = const Value.absent(),
     this.governorate = const Value.absent(),
@@ -797,6 +839,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
     this.filePath = const Value.absent(),
     this.title = const Value.absent(),
     this.description = const Value.absent(),
+    this.siteName = const Value.absent(),
     this.thumbnailPath = const Value.absent(),
     this.nationalId = const Value.absent(),
     this.governorate = const Value.absent(),
@@ -816,6 +859,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
     Expression<String>? filePath,
     Expression<String>? title,
     Expression<String>? description,
+    Expression<String>? siteName,
     Expression<String>? thumbnailPath,
     Expression<String>? nationalId,
     Expression<String>? governorate,
@@ -834,6 +878,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
       if (filePath != null) 'file_path': filePath,
       if (title != null) 'title': title,
       if (description != null) 'description': description,
+      if (siteName != null) 'site_name': siteName,
       if (thumbnailPath != null) 'thumbnail_path': thumbnailPath,
       if (nationalId != null) 'national_id': nationalId,
       if (governorate != null) 'governorate': governorate,
@@ -854,6 +899,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
     Value<String?>? filePath,
     Value<String?>? title,
     Value<String?>? description,
+    Value<String?>? siteName,
     Value<String?>? thumbnailPath,
     Value<String?>? nationalId,
     Value<String?>? governorate,
@@ -872,6 +918,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
       filePath: filePath ?? this.filePath,
       title: title ?? this.title,
       description: description ?? this.description,
+      siteName: siteName ?? this.siteName,
       thumbnailPath: thumbnailPath ?? this.thumbnailPath,
       nationalId: nationalId ?? this.nationalId,
       governorate: governorate ?? this.governorate,
@@ -907,6 +954,9 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
     }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
+    }
+    if (siteName.present) {
+      map['site_name'] = Variable<String>(siteName.value);
     }
     if (thumbnailPath.present) {
       map['thumbnail_path'] = Variable<String>(thumbnailPath.value);
@@ -948,6 +998,7 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
           ..write('filePath: $filePath, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('siteName: $siteName, ')
           ..write('thumbnailPath: $thumbnailPath, ')
           ..write('nationalId: $nationalId, ')
           ..write('governorate: $governorate, ')
@@ -962,10 +1013,638 @@ class VaultEntriesCompanion extends UpdateCompanion<VaultEntry> {
   }
 }
 
+class $VaultCategoriesTableTable extends VaultCategoriesTable
+    with TableInfo<$VaultCategoriesTableTable, VaultCategoriesTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VaultCategoriesTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameArMeta = const VerificationMeta('nameAr');
+  @override
+  late final GeneratedColumn<String> nameAr = GeneratedColumn<String>(
+    'name_ar',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _iconKeyMeta = const VerificationMeta(
+    'iconKey',
+  );
+  @override
+  late final GeneratedColumn<String> iconKey = GeneratedColumn<String>(
+    'icon_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorHexMeta = const VerificationMeta(
+    'colorHex',
+  );
+  @override
+  late final GeneratedColumn<String> colorHex = GeneratedColumn<String>(
+    'color_hex',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isSystemMeta = const VerificationMeta(
+    'isSystem',
+  );
+  @override
+  late final GeneratedColumn<bool> isSystem = GeneratedColumn<bool>(
+    'is_system',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_system" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _hasAutoPurgeMeta = const VerificationMeta(
+    'hasAutoPurge',
+  );
+  @override
+  late final GeneratedColumn<bool> hasAutoPurge = GeneratedColumn<bool>(
+    'has_auto_purge',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_auto_purge" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    key,
+    nameAr,
+    nameEn,
+    iconKey,
+    colorHex,
+    isSystem,
+    hasAutoPurge,
+    sortOrder,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vault_categories_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<VaultCategoriesTableData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('name_ar')) {
+      context.handle(
+        _nameArMeta,
+        nameAr.isAcceptableOrUnknown(data['name_ar']!, _nameArMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameArMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameEnMeta);
+    }
+    if (data.containsKey('icon_key')) {
+      context.handle(
+        _iconKeyMeta,
+        iconKey.isAcceptableOrUnknown(data['icon_key']!, _iconKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_iconKeyMeta);
+    }
+    if (data.containsKey('color_hex')) {
+      context.handle(
+        _colorHexMeta,
+        colorHex.isAcceptableOrUnknown(data['color_hex']!, _colorHexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorHexMeta);
+    }
+    if (data.containsKey('is_system')) {
+      context.handle(
+        _isSystemMeta,
+        isSystem.isAcceptableOrUnknown(data['is_system']!, _isSystemMeta),
+      );
+    }
+    if (data.containsKey('has_auto_purge')) {
+      context.handle(
+        _hasAutoPurgeMeta,
+        hasAutoPurge.isAcceptableOrUnknown(
+          data['has_auto_purge']!,
+          _hasAutoPurgeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VaultCategoriesTableData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VaultCategoriesTableData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      nameAr: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_ar'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      )!,
+      iconKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}icon_key'],
+      )!,
+      colorHex: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}color_hex'],
+      )!,
+      isSystem: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_system'],
+      )!,
+      hasAutoPurge: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_auto_purge'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $VaultCategoriesTableTable createAlias(String alias) {
+    return $VaultCategoriesTableTable(attachedDatabase, alias);
+  }
+}
+
+class VaultCategoriesTableData extends DataClass
+    implements Insertable<VaultCategoriesTableData> {
+  /// Primary auto-incrementing category identifier.
+  final int id;
+
+  /// Unique immutable slug / key (e.g., 'docs', 'readLater', 'quickNotes', 'tempVault', or custom uuid).
+  final String key;
+
+  /// Localized Arabic display name.
+  final String nameAr;
+
+  /// Localized English display name.
+  final String nameEn;
+
+  /// Semantic icon identifier key (e.g., 'badge', 'bookmark', 'notes', 'hourglass', 'folder', 'star', 'credit_card', 'archive').
+  final String iconKey;
+
+  /// Hex color token string (e.g., '#128C7E', '#25D366', '#3B82F6', '#EC4899', '#8B5CF6').
+  final String colorHex;
+
+  /// Flag indicating system-protected templates (cannot be deleted by user).
+  final bool isSystem;
+
+  /// Flag enforcing 72-hour TTL auto-purge policy (special rule for Temp Vault).
+  final bool hasAutoPurge;
+
+  /// User-defined display sequence for drag-and-drop tab ordering.
+  final int sortOrder;
+
+  /// Creation timestamp.
+  final DateTime createdAt;
+  const VaultCategoriesTableData({
+    required this.id,
+    required this.key,
+    required this.nameAr,
+    required this.nameEn,
+    required this.iconKey,
+    required this.colorHex,
+    required this.isSystem,
+    required this.hasAutoPurge,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['key'] = Variable<String>(key);
+    map['name_ar'] = Variable<String>(nameAr);
+    map['name_en'] = Variable<String>(nameEn);
+    map['icon_key'] = Variable<String>(iconKey);
+    map['color_hex'] = Variable<String>(colorHex);
+    map['is_system'] = Variable<bool>(isSystem);
+    map['has_auto_purge'] = Variable<bool>(hasAutoPurge);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  VaultCategoriesTableCompanion toCompanion(bool nullToAbsent) {
+    return VaultCategoriesTableCompanion(
+      id: Value(id),
+      key: Value(key),
+      nameAr: Value(nameAr),
+      nameEn: Value(nameEn),
+      iconKey: Value(iconKey),
+      colorHex: Value(colorHex),
+      isSystem: Value(isSystem),
+      hasAutoPurge: Value(hasAutoPurge),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory VaultCategoriesTableData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VaultCategoriesTableData(
+      id: serializer.fromJson<int>(json['id']),
+      key: serializer.fromJson<String>(json['key']),
+      nameAr: serializer.fromJson<String>(json['nameAr']),
+      nameEn: serializer.fromJson<String>(json['nameEn']),
+      iconKey: serializer.fromJson<String>(json['iconKey']),
+      colorHex: serializer.fromJson<String>(json['colorHex']),
+      isSystem: serializer.fromJson<bool>(json['isSystem']),
+      hasAutoPurge: serializer.fromJson<bool>(json['hasAutoPurge']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'key': serializer.toJson<String>(key),
+      'nameAr': serializer.toJson<String>(nameAr),
+      'nameEn': serializer.toJson<String>(nameEn),
+      'iconKey': serializer.toJson<String>(iconKey),
+      'colorHex': serializer.toJson<String>(colorHex),
+      'isSystem': serializer.toJson<bool>(isSystem),
+      'hasAutoPurge': serializer.toJson<bool>(hasAutoPurge),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  VaultCategoriesTableData copyWith({
+    int? id,
+    String? key,
+    String? nameAr,
+    String? nameEn,
+    String? iconKey,
+    String? colorHex,
+    bool? isSystem,
+    bool? hasAutoPurge,
+    int? sortOrder,
+    DateTime? createdAt,
+  }) => VaultCategoriesTableData(
+    id: id ?? this.id,
+    key: key ?? this.key,
+    nameAr: nameAr ?? this.nameAr,
+    nameEn: nameEn ?? this.nameEn,
+    iconKey: iconKey ?? this.iconKey,
+    colorHex: colorHex ?? this.colorHex,
+    isSystem: isSystem ?? this.isSystem,
+    hasAutoPurge: hasAutoPurge ?? this.hasAutoPurge,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  VaultCategoriesTableData copyWithCompanion(
+    VaultCategoriesTableCompanion data,
+  ) {
+    return VaultCategoriesTableData(
+      id: data.id.present ? data.id.value : this.id,
+      key: data.key.present ? data.key.value : this.key,
+      nameAr: data.nameAr.present ? data.nameAr.value : this.nameAr,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      iconKey: data.iconKey.present ? data.iconKey.value : this.iconKey,
+      colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
+      isSystem: data.isSystem.present ? data.isSystem.value : this.isSystem,
+      hasAutoPurge: data.hasAutoPurge.present
+          ? data.hasAutoPurge.value
+          : this.hasAutoPurge,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VaultCategoriesTableData(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('nameAr: $nameAr, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('isSystem: $isSystem, ')
+          ..write('hasAutoPurge: $hasAutoPurge, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    key,
+    nameAr,
+    nameEn,
+    iconKey,
+    colorHex,
+    isSystem,
+    hasAutoPurge,
+    sortOrder,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VaultCategoriesTableData &&
+          other.id == this.id &&
+          other.key == this.key &&
+          other.nameAr == this.nameAr &&
+          other.nameEn == this.nameEn &&
+          other.iconKey == this.iconKey &&
+          other.colorHex == this.colorHex &&
+          other.isSystem == this.isSystem &&
+          other.hasAutoPurge == this.hasAutoPurge &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class VaultCategoriesTableCompanion
+    extends UpdateCompanion<VaultCategoriesTableData> {
+  final Value<int> id;
+  final Value<String> key;
+  final Value<String> nameAr;
+  final Value<String> nameEn;
+  final Value<String> iconKey;
+  final Value<String> colorHex;
+  final Value<bool> isSystem;
+  final Value<bool> hasAutoPurge;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  const VaultCategoriesTableCompanion({
+    this.id = const Value.absent(),
+    this.key = const Value.absent(),
+    this.nameAr = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.iconKey = const Value.absent(),
+    this.colorHex = const Value.absent(),
+    this.isSystem = const Value.absent(),
+    this.hasAutoPurge = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  VaultCategoriesTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String key,
+    required String nameAr,
+    required String nameEn,
+    required String iconKey,
+    required String colorHex,
+    this.isSystem = const Value.absent(),
+    this.hasAutoPurge = const Value.absent(),
+    required int sortOrder,
+    required DateTime createdAt,
+  }) : key = Value(key),
+       nameAr = Value(nameAr),
+       nameEn = Value(nameEn),
+       iconKey = Value(iconKey),
+       colorHex = Value(colorHex),
+       sortOrder = Value(sortOrder),
+       createdAt = Value(createdAt);
+  static Insertable<VaultCategoriesTableData> custom({
+    Expression<int>? id,
+    Expression<String>? key,
+    Expression<String>? nameAr,
+    Expression<String>? nameEn,
+    Expression<String>? iconKey,
+    Expression<String>? colorHex,
+    Expression<bool>? isSystem,
+    Expression<bool>? hasAutoPurge,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (key != null) 'key': key,
+      if (nameAr != null) 'name_ar': nameAr,
+      if (nameEn != null) 'name_en': nameEn,
+      if (iconKey != null) 'icon_key': iconKey,
+      if (colorHex != null) 'color_hex': colorHex,
+      if (isSystem != null) 'is_system': isSystem,
+      if (hasAutoPurge != null) 'has_auto_purge': hasAutoPurge,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  VaultCategoriesTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? key,
+    Value<String>? nameAr,
+    Value<String>? nameEn,
+    Value<String>? iconKey,
+    Value<String>? colorHex,
+    Value<bool>? isSystem,
+    Value<bool>? hasAutoPurge,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+  }) {
+    return VaultCategoriesTableCompanion(
+      id: id ?? this.id,
+      key: key ?? this.key,
+      nameAr: nameAr ?? this.nameAr,
+      nameEn: nameEn ?? this.nameEn,
+      iconKey: iconKey ?? this.iconKey,
+      colorHex: colorHex ?? this.colorHex,
+      isSystem: isSystem ?? this.isSystem,
+      hasAutoPurge: hasAutoPurge ?? this.hasAutoPurge,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (nameAr.present) {
+      map['name_ar'] = Variable<String>(nameAr.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (iconKey.present) {
+      map['icon_key'] = Variable<String>(iconKey.value);
+    }
+    if (colorHex.present) {
+      map['color_hex'] = Variable<String>(colorHex.value);
+    }
+    if (isSystem.present) {
+      map['is_system'] = Variable<bool>(isSystem.value);
+    }
+    if (hasAutoPurge.present) {
+      map['has_auto_purge'] = Variable<bool>(hasAutoPurge.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VaultCategoriesTableCompanion(')
+          ..write('id: $id, ')
+          ..write('key: $key, ')
+          ..write('nameAr: $nameAr, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('iconKey: $iconKey, ')
+          ..write('colorHex: $colorHex, ')
+          ..write('isSystem: $isSystem, ')
+          ..write('hasAutoPurge: $hasAutoPurge, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$VaultDatabase extends GeneratedDatabase {
   _$VaultDatabase(QueryExecutor e) : super(e);
   $VaultDatabaseManager get managers => $VaultDatabaseManager(this);
   late final $VaultEntriesTable vaultEntries = $VaultEntriesTable(this);
+  late final $VaultCategoriesTableTable vaultCategoriesTable =
+      $VaultCategoriesTableTable(this);
   late final VaultInsertDao vaultInsertDao = VaultInsertDao(
     this as VaultDatabase,
   );
@@ -976,11 +1655,17 @@ abstract class _$VaultDatabase extends GeneratedDatabase {
   late final VaultUpdateDao vaultUpdateDao = VaultUpdateDao(
     this as VaultDatabase,
   );
+  late final VaultCategoriesDao vaultCategoriesDao = VaultCategoriesDao(
+    this as VaultDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [vaultEntries];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    vaultEntries,
+    vaultCategoriesTable,
+  ];
 }
 
 typedef $$VaultEntriesTableCreateCompanionBuilder =
@@ -992,6 +1677,7 @@ typedef $$VaultEntriesTableCreateCompanionBuilder =
       Value<String?> filePath,
       Value<String?> title,
       Value<String?> description,
+      Value<String?> siteName,
       Value<String?> thumbnailPath,
       Value<String?> nationalId,
       Value<String?> governorate,
@@ -1011,6 +1697,7 @@ typedef $$VaultEntriesTableUpdateCompanionBuilder =
       Value<String?> filePath,
       Value<String?> title,
       Value<String?> description,
+      Value<String?> siteName,
       Value<String?> thumbnailPath,
       Value<String?> nationalId,
       Value<String?> governorate,
@@ -1063,6 +1750,11 @@ class $$VaultEntriesTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get siteName => $composableBuilder(
+    column: $table.siteName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1156,6 +1848,11 @@ class $$VaultEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get siteName => $composableBuilder(
+    column: $table.siteName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get thumbnailPath => $composableBuilder(
     column: $table.thumbnailPath,
     builder: (column) => ColumnOrderings(column),
@@ -1236,6 +1933,9 @@ class $$VaultEntriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get siteName =>
+      $composableBuilder(column: $table.siteName, builder: (column) => column);
+
   GeneratedColumn<String> get thumbnailPath => $composableBuilder(
     column: $table.thumbnailPath,
     builder: (column) => column,
@@ -1312,6 +2012,7 @@ class $$VaultEntriesTableTableManager
                 Value<String?> filePath = const Value.absent(),
                 Value<String?> title = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<String?> siteName = const Value.absent(),
                 Value<String?> thumbnailPath = const Value.absent(),
                 Value<String?> nationalId = const Value.absent(),
                 Value<String?> governorate = const Value.absent(),
@@ -1329,6 +2030,7 @@ class $$VaultEntriesTableTableManager
                 filePath: filePath,
                 title: title,
                 description: description,
+                siteName: siteName,
                 thumbnailPath: thumbnailPath,
                 nationalId: nationalId,
                 governorate: governorate,
@@ -1348,6 +2050,7 @@ class $$VaultEntriesTableTableManager
                 Value<String?> filePath = const Value.absent(),
                 Value<String?> title = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<String?> siteName = const Value.absent(),
                 Value<String?> thumbnailPath = const Value.absent(),
                 Value<String?> nationalId = const Value.absent(),
                 Value<String?> governorate = const Value.absent(),
@@ -1365,6 +2068,7 @@ class $$VaultEntriesTableTableManager
                 filePath: filePath,
                 title: title,
                 description: description,
+                siteName: siteName,
                 thumbnailPath: thumbnailPath,
                 nationalId: nationalId,
                 governorate: governorate,
@@ -1409,10 +2113,331 @@ typedef $$VaultEntriesTableProcessedTableManager =
       VaultEntry,
       PrefetchHooks Function()
     >;
+typedef $$VaultCategoriesTableTableCreateCompanionBuilder =
+    VaultCategoriesTableCompanion Function({
+      Value<int> id,
+      required String key,
+      required String nameAr,
+      required String nameEn,
+      required String iconKey,
+      required String colorHex,
+      Value<bool> isSystem,
+      Value<bool> hasAutoPurge,
+      required int sortOrder,
+      required DateTime createdAt,
+    });
+typedef $$VaultCategoriesTableTableUpdateCompanionBuilder =
+    VaultCategoriesTableCompanion Function({
+      Value<int> id,
+      Value<String> key,
+      Value<String> nameAr,
+      Value<String> nameEn,
+      Value<String> iconKey,
+      Value<String> colorHex,
+      Value<bool> isSystem,
+      Value<bool> hasAutoPurge,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+    });
+
+class $$VaultCategoriesTableTableFilterComposer
+    extends Composer<_$VaultDatabase, $VaultCategoriesTableTable> {
+  $$VaultCategoriesTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameAr => $composableBuilder(
+    column: $table.nameAr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSystem => $composableBuilder(
+    column: $table.isSystem,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasAutoPurge => $composableBuilder(
+    column: $table.hasAutoPurge,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$VaultCategoriesTableTableOrderingComposer
+    extends Composer<_$VaultDatabase, $VaultCategoriesTableTable> {
+  $$VaultCategoriesTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameAr => $composableBuilder(
+    column: $table.nameAr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get iconKey => $composableBuilder(
+    column: $table.iconKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get colorHex => $composableBuilder(
+    column: $table.colorHex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSystem => $composableBuilder(
+    column: $table.isSystem,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasAutoPurge => $composableBuilder(
+    column: $table.hasAutoPurge,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$VaultCategoriesTableTableAnnotationComposer
+    extends Composer<_$VaultDatabase, $VaultCategoriesTableTable> {
+  $$VaultCategoriesTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get nameAr =>
+      $composableBuilder(column: $table.nameAr, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get iconKey =>
+      $composableBuilder(column: $table.iconKey, builder: (column) => column);
+
+  GeneratedColumn<String> get colorHex =>
+      $composableBuilder(column: $table.colorHex, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSystem =>
+      $composableBuilder(column: $table.isSystem, builder: (column) => column);
+
+  GeneratedColumn<bool> get hasAutoPurge => $composableBuilder(
+    column: $table.hasAutoPurge,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$VaultCategoriesTableTableTableManager
+    extends
+        RootTableManager<
+          _$VaultDatabase,
+          $VaultCategoriesTableTable,
+          VaultCategoriesTableData,
+          $$VaultCategoriesTableTableFilterComposer,
+          $$VaultCategoriesTableTableOrderingComposer,
+          $$VaultCategoriesTableTableAnnotationComposer,
+          $$VaultCategoriesTableTableCreateCompanionBuilder,
+          $$VaultCategoriesTableTableUpdateCompanionBuilder,
+          (
+            VaultCategoriesTableData,
+            BaseReferences<
+              _$VaultDatabase,
+              $VaultCategoriesTableTable,
+              VaultCategoriesTableData
+            >,
+          ),
+          VaultCategoriesTableData,
+          PrefetchHooks Function()
+        > {
+  $$VaultCategoriesTableTableTableManager(
+    _$VaultDatabase db,
+    $VaultCategoriesTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VaultCategoriesTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VaultCategoriesTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$VaultCategoriesTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> key = const Value.absent(),
+                Value<String> nameAr = const Value.absent(),
+                Value<String> nameEn = const Value.absent(),
+                Value<String> iconKey = const Value.absent(),
+                Value<String> colorHex = const Value.absent(),
+                Value<bool> isSystem = const Value.absent(),
+                Value<bool> hasAutoPurge = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => VaultCategoriesTableCompanion(
+                id: id,
+                key: key,
+                nameAr: nameAr,
+                nameEn: nameEn,
+                iconKey: iconKey,
+                colorHex: colorHex,
+                isSystem: isSystem,
+                hasAutoPurge: hasAutoPurge,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String key,
+                required String nameAr,
+                required String nameEn,
+                required String iconKey,
+                required String colorHex,
+                Value<bool> isSystem = const Value.absent(),
+                Value<bool> hasAutoPurge = const Value.absent(),
+                required int sortOrder,
+                required DateTime createdAt,
+              }) => VaultCategoriesTableCompanion.insert(
+                id: id,
+                key: key,
+                nameAr: nameAr,
+                nameEn: nameEn,
+                iconKey: iconKey,
+                colorHex: colorHex,
+                isSystem: isSystem,
+                hasAutoPurge: hasAutoPurge,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $VaultCategoriesTableTable,
+                    VaultCategoriesTableData
+                  >(table),
+                  BaseReferences<
+                    _$VaultDatabase,
+                    $VaultCategoriesTableTable,
+                    VaultCategoriesTableData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$VaultCategoriesTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$VaultDatabase,
+      $VaultCategoriesTableTable,
+      VaultCategoriesTableData,
+      $$VaultCategoriesTableTableFilterComposer,
+      $$VaultCategoriesTableTableOrderingComposer,
+      $$VaultCategoriesTableTableAnnotationComposer,
+      $$VaultCategoriesTableTableCreateCompanionBuilder,
+      $$VaultCategoriesTableTableUpdateCompanionBuilder,
+      (
+        VaultCategoriesTableData,
+        BaseReferences<
+          _$VaultDatabase,
+          $VaultCategoriesTableTable,
+          VaultCategoriesTableData
+        >,
+      ),
+      VaultCategoriesTableData,
+      PrefetchHooks Function()
+    >;
 
 class $VaultDatabaseManager {
   final _$VaultDatabase _db;
   $VaultDatabaseManager(this._db);
   $$VaultEntriesTableTableManager get vaultEntries =>
       $$VaultEntriesTableTableManager(_db, _db.vaultEntries);
+  $$VaultCategoriesTableTableTableManager get vaultCategoriesTable =>
+      $$VaultCategoriesTableTableTableManager(_db, _db.vaultCategoriesTable);
 }

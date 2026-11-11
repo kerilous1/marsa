@@ -35,11 +35,32 @@ dependencies:
   # -- Utilities --
   uuid: ^4.5.1                 # Generate unique IDs for vault entries
   intl: ^0.20.2                # Date formatting for timestamps
+  shared_preferences: ^2.3.5   # Local key-value preferences for onboarding & security
+  local_auth: ^2.3.0           # Biometric authentication (Fingerprint, Face ID)
+  url_launcher: ^6.3.1         # Direct URL opening in external application
+
+  # -- UI Polish & Animation --
+  flutter_animate: ^4.5.2      # Micro-interactions and staggered entry animations
+  smooth_page_indicator: ^1.2.1 # Elegant pagination dots for onboarding
+  crypto: ^3.0.7
+  open_filex: ^4.7.0
+
+  # -- Machine Learning & OCR --
+  google_mlkit_text_recognition: ^0.14.0 # Local OCR for Egyptian National IDs and documents
+
+  # -- Networking & Web Scraping --
+  http: ^1.2.2                 # Lightweight HTTP client with streaming support
+  html: ^0.15.4                # HTML5 DOM parser for OpenGraph extraction
+  cryptography: ^2.7.0
+  archive: ^3.6.1
+  file_picker: ^8.1.4
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3 # Native launcher icon generator
 
   # -- Drift Code Generation --
   drift_dev: ^2.23.1           # Drift schema code generator
@@ -51,4 +72,12 @@ flutter:
 
   assets:
     - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/Logo.png"
+  adaptive_icon_background: "#128C7E"
+  adaptive_icon_foreground: "assets/images/Logo.png"
+
 

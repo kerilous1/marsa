@@ -6,10 +6,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 import 'tables/vault_entries_table.dart';
+import 'tables/vault_categories_table.dart';
 import 'daos/vault_insert_dao.dart';
 import 'daos/vault_query_dao.dart';
 import 'daos/vault_delete_dao.dart';
 import 'daos/vault_update_dao.dart';
+import 'daos/vault_categories_dao.dart';
 
 part 'vault_database.g.dart';
 
@@ -18,14 +20,18 @@ part 'vault_database.g.dart';
 /// Architecture:
 ///   - Single SQLite database file stored in the app-private documents directory.
 ///   - FTS5 virtual table (vault_fts) for sub-50ms full-text search.
-///   - 4 segregated DAOs following Interface Segregation Principle:
-///     [VaultInsertDao], [VaultQueryDao], [VaultDeleteDao], [VaultUpdateDao].
-///
-/// The database schema includes all columns needed through Sprint 6,
-/// populated incrementally as each sprint's processors come online.
+///   - 5 segregated DAOs following Interface Segregation Principle:
+///     [VaultInsertDao], [VaultQueryDao], [VaultDeleteDao], [VaultUpdateDao],
+///     and [VaultCategoriesDao].
 @DriftDatabase(
-  tables: [VaultEntries],
-  daos: [VaultInsertDao, VaultQueryDao, VaultDeleteDao, VaultUpdateDao],
+  tables: [VaultEntries, VaultCategoriesTable],
+  daos: [
+    VaultInsertDao,
+    VaultQueryDao,
+    VaultDeleteDao,
+    VaultUpdateDao,
+    VaultCategoriesDao,
+  ],
 )
 class VaultDatabase extends _$VaultDatabase {
   VaultDatabase({String? dbName}) : super(_openConnection(dbName));
@@ -35,7 +41,7 @@ class VaultDatabase extends _$VaultDatabase {
 
   /// Schema version — increment this when adding migrations.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   /// Called when the database is first created. Sets up the FTS5 virtual
   /// table and composite indices for optimized query performance.
@@ -105,6 +111,11 @@ class VaultDatabase extends _$VaultDatabase {
           '  VALUES (new.id, new.raw_payload, new.title, new.description, new.ocr_extracted_text, new.national_id); '
           'END',
         );
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          await m.addColumn(vaultEntries, vaultEntries.siteName);
+        }
       },
     );
   }

@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>AppGroupId</key>
+	<string>group.com.marsa.vault</string>
 </dict>
 </plist>

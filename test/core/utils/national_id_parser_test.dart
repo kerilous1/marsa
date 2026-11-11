@@ -129,8 +129,7 @@ void main() {
     test('rejects 15-digit string (too long)', () {
       final result =
           EgyptianNationalIdParser.parse('290010101012345');
-      // Should not match because the regex requires word boundaries
-      // and exact 14-digit grouping
+      expect(result, isNull);
     });
 
     test('rejects invalid century digit (1)', () {
@@ -218,6 +217,56 @@ void main() {
 
     test('female English label', () {
       expect(Gender.female.englishLabel, 'Female');
+    });
+  });
+
+  group('EgyptianNationalIdParser — extractAndParse & Formatting Helpers', () {
+    test('extracts ID with spaces between digit clusters (OCR formatting)', () {
+      const noisyText = 'بطاقة تحقيق شخصية \n 2 95 06 15 21 0123 4 \n جمهورية مصر العربية';
+      final result = EgyptianNationalIdParser.extractAndParse(noisyText);
+
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29506152101234');
+      expect(result.governorate, 'الجيزة');
+      expect(result.birthDate, DateTime(1995, 6, 15));
+      expect(result.gender, Gender.male);
+    });
+
+    test('extracts ID with Eastern Arabic-Indic numerals (٠-٩)', () {
+      const arabicDigits = '٢٩٠٠١٠١٠١٠١٢٣٤';
+      final result = EgyptianNationalIdParser.extractAndParse(arabicDigits);
+
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29001010101234');
+      expect(result.governorate, 'القاهرة');
+      expect(result.gender, Gender.male);
+    });
+
+    test('extracts ID with hyphens or dots', () {
+      const dashed = 'ID: 3-020315-020012-5';
+      final result = EgyptianNationalIdParser.extractAndParse(dashed);
+
+      expect(result, isNotNull);
+      expect(result!.nationalId, '30203150200125');
+      expect(result.governorate, 'الإسكندرية');
+      expect(result.gender, Gender.female);
+    });
+
+    test('returns null when text contains no valid 14-digit ID', () {
+      const invalid = 'Document without ID or with 12345 only';
+      expect(EgyptianNationalIdParser.extractAndParse(invalid), isNull);
+    });
+
+    test('formatForDisplay formats 14 digits into visually spaced clusters', () {
+      const raw = '29506152101234';
+      final formatted = EgyptianNationalIdParser.formatForDisplay(raw);
+      expect(formatted, '2 95 06 15 21 0123 4');
+    });
+
+    test('sanitizeForClipboard strips all spaces, hyphens, and non-digits', () {
+      const formatted = '2 95 06 15 21 0123 4';
+      final raw = EgyptianNationalIdParser.sanitizeForClipboard(formatted);
+      expect(raw, '29506152101234');
     });
   });
 }

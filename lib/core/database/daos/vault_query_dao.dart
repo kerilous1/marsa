@@ -104,4 +104,16 @@ class VaultQueryDao extends DatabaseAccessor<VaultDatabase>
               e.ttlExpiry.isSmallerThanValue(DateTime.now())))
         .get();
   }
+
+  /// Returns all active tempVault entries whose expiry is in the future (> now + 1 hour).
+  ///
+  /// Used on app launch / reboot recovery to reschedule AlarmManager notifications.
+  Future<List<VaultEntry>> getActiveTempEntriesForNotification() {
+    final threshold = DateTime.now().add(const Duration(hours: 1));
+    return (select(vaultEntries)
+          ..where((e) =>
+              e.category.equals('tempVault') &
+              e.ttlExpiry.isBiggerThanValue(threshold)))
+        .get();
+  }
 }

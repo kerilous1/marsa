@@ -9,7 +9,8 @@ abstract class ShareRepository {
   ///
   /// Returns the newly generated unique database integer ID.
   Future<int> insertRawEntry({
-    required VaultCategory category,
+    VaultCategory? category,
+    String? categoryKey,
     required String rawPayload,
     String? cleanUrl,
     String? filePath,

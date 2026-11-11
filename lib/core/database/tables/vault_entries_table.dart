@@ -40,6 +40,9 @@ class VaultEntries extends Table {
   /// [Sprint 2] Page description from OpenGraph metadata.
   TextColumn get description => text().nullable()();
 
+  /// [Sprint 5] Site or publisher name extracted from OpenGraph or domain.
+  TextColumn get siteName => text().nullable()();
+
   /// [Sprint 2] Local cached path for OpenGraph thumbnail image.
   TextColumn get thumbnailPath => text().nullable()();
 

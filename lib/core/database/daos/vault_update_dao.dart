@@ -30,11 +30,17 @@ class VaultUpdateDao extends DatabaseAccessor<VaultDatabase>
   /// Moves an entry to a different vault category.
   ///
   /// Used by the dashboard "Move" action to reclassify an item.
-  /// Clears [ttlExpiry] when moving OUT of tempVault (item becomes permanent).
-  Future<bool> updateCategory(int id, String newCategory) {
+  /// Clears [ttlExpiry] when moving to a permanent category, or sets 72h TTL
+  /// when moving to `tempVault` or a custom category with [hasAutoPurge] == true.
+  Future<bool> updateCategory(
+    int id,
+    String newCategory, {
+    bool? hasAutoPurge,
+  }) {
+    final shouldPurge = hasAutoPurge ?? (newCategory == 'tempVault');
     final companion = VaultEntriesCompanion(
       category: Value(newCategory),
-      ttlExpiry: newCategory == 'tempVault'
+      ttlExpiry: shouldPurge
           ? Value(DateTime.now().add(const Duration(hours: 72)))
           : const Value(null),
     );
@@ -102,5 +108,24 @@ class VaultUpdateDao extends DatabaseAccessor<VaultDatabase>
   /// Atomically updates the stored file path for an entry (e.g. after at-rest encryption).
   Future<bool> updateFilePath(int id, String newFilePath) {
     return updateEntry(id, VaultEntriesCompanion(filePath: Value(newFilePath)));
+  }
+
+  /// Updates the user-editable title and text content of an entry.
+  Future<bool> updateItemContent(
+    int id, {
+    String? title,
+    required String rawPayload,
+    String? cleanUrl,
+  }) {
+    final normalizedTitle =
+        title != null ? (title.trim().isEmpty ? null : title.trim()) : null;
+    return updateEntry(
+      id,
+      VaultEntriesCompanion(
+        title: title != null ? Value(normalizedTitle) : const Value.absent(),
+        rawPayload: Value(rawPayload),
+        cleanUrl: cleanUrl != null ? Value(cleanUrl) : const Value.absent(),
+      ),
+    );
   }
 }

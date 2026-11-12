@@ -69,6 +69,10 @@ class VaultDatabase extends _$VaultDatabase {
           'CREATE INDEX IF NOT EXISTS idx_vault_national_id '
           'ON vault_entries (national_id)',
         );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_vault_ttl_expiry '
+          'ON vault_entries (ttl_expiry)',
+        );
 
         // Create FTS5 virtual table for full-text search.
         // Tokenizes: raw_payload, title, description, ocr_extracted_text, national_id.
@@ -115,6 +119,10 @@ class VaultDatabase extends _$VaultDatabase {
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
           await m.addColumn(vaultEntries, vaultEntries.siteName);
+          await m.createTable(vaultCategoriesTable);
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_vault_ttl_expiry ON vault_entries (ttl_expiry);',
+          );
         }
       },
     );

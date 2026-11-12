@@ -20,15 +20,15 @@ class VaultDeleteDao extends DatabaseAccessor<VaultDatabase>
     return (delete(vaultEntries)..where((e) => e.id.equals(id))).go();
   }
 
-  /// Purges all tempVault entries whose [ttlExpiry] has passed.
+  /// Purges all entries whose [ttlExpiry] has passed (both tempVault and custom auto-purge categories).
   ///
   /// Called on app launch and periodically to enforce auto-cleanup policy.
   /// Returns the number of purged entries.
   Future<int> purgeExpiredTempEntries() {
     return (delete(vaultEntries)
           ..where((e) =>
-              e.category.equals('tempVault') &
-              e.ttlExpiry.isSmallerThanValue(DateTime.now())))
+              e.ttlExpiry.isNotNull() &
+              e.ttlExpiry.isSmallerOrEqualValue(DateTime.now())))
         .go();
   }
 }

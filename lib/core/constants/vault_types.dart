@@ -68,7 +68,7 @@ extension VaultCategoryExtension on VaultCategory {
   }
 
   /// Parses a database string key back into a [VaultCategory] enum value.
-  /// Returns [VaultCategory.tempVault] as fallback for unknown keys.
+  /// Returns [VaultCategory.quickNotes] as a safe permanent fallback for custom category keys.
   static VaultCategory fromDbKey(String key) {
     switch (key) {
       case 'docs':
@@ -80,7 +80,7 @@ extension VaultCategoryExtension on VaultCategory {
       case 'tempVault':
         return VaultCategory.tempVault;
       default:
-        return VaultCategory.tempVault;
+        return VaultCategory.quickNotes;
     }
   }
 }

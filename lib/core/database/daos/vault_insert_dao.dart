@@ -22,4 +22,28 @@ class VaultInsertDao extends DatabaseAccessor<VaultDatabase>
   Future<int> insertEntry(VaultEntriesCompanion entry) {
     return into(vaultEntries).insert(entry);
   }
+
+  /// Checks if an identical URL or text note already exists in the given [category]
+  /// to prevent accidental duplicate shares.
+  Future<VaultEntry?> findDuplicateEntry({
+    required String category,
+    required String rawPayload,
+    String? cleanUrl,
+  }) {
+    if (cleanUrl != null && cleanUrl.isNotEmpty) {
+      return (select(vaultEntries)
+            ..where((e) =>
+                e.category.equals(category) & e.cleanUrl.equals(cleanUrl))
+            ..limit(1))
+          .getSingleOrNull();
+    }
+
+    return (select(vaultEntries)
+          ..where((e) =>
+              e.category.equals(category) &
+              e.filePath.isNull() &
+              e.rawPayload.equals(rawPayload))
+          ..limit(1))
+        .getSingleOrNull();
+  }
 }

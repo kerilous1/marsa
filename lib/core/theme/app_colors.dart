@@ -8,6 +8,7 @@ abstract final class AppColors {
   // Brand Palette
   static const Color primaryGreen = Color(0xFF25D366);
   static const Color darkGreen = Color(0xFF128C7E);
+  static const Color emeraldPrimary = Color(0xFF128C7E);
   static const Color lightGreenBg = Color(0xFFE8F5EE);
   static const Color textDark = Color(0xFF111B1F);
   static const Color surfaceWhite = Color(0xFFFFFFFF);

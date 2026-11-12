@@ -35,8 +35,7 @@ dependencies:
   # -- Utilities --
   uuid: ^4.5.1                 # Generate unique IDs for vault entries
   intl: ^0.20.2                # Date formatting for timestamps
-  shared_preferences: ^2.3.5   # Local key-value preferences for onboarding & security
-  local_auth: ^2.3.0           # Biometric authentication (Fingerprint, Face ID)
+  shared_preferences: ^2.3.5   # Local key-value preferences for onboarding & theme/locale
   url_launcher: ^6.3.1         # Direct URL opening in external application
 
   # -- UI Polish & Animation --

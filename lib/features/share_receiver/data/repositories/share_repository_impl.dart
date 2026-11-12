@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
 import '../../../../core/constants/vault_types.dart';
 import '../../../../core/database/daos/vault_insert_dao.dart';
 import '../../../../core/database/daos/vault_update_dao.dart';
@@ -52,6 +51,21 @@ class ShareRepositoryImpl implements ShareRepository {
     DateTime? ttlExpiry,
   }) async {
     final catKey = categoryKey ?? category?.dbKey ?? 'tempVault';
+
+    // Duplicate Detection Guard: If an identical URL or text note already exists in this category,
+    // return the existing entry ID instead of creating a duplicate record.
+    if (filePath == null || filePath.isEmpty) {
+      final duplicate = await _insertDao.findDuplicateEntry(
+        category: catKey,
+        rawPayload: rawPayload,
+        cleanUrl: cleanUrl,
+      );
+      if (duplicate != null) {
+        debugPrint('ℹ️ [ShareRepositoryImpl] Duplicate entry detected (#${duplicate.id}) in $catKey. Skipping duplicate insert.');
+        return duplicate.id;
+      }
+    }
+
     final entry = VaultEntriesCompanion.insert(
       category: catKey,
       rawPayload: rawPayload,
@@ -64,9 +78,10 @@ class ShareRepositoryImpl implements ShareRepository {
 
     final id = await _insertDao.insertEntry(entry);
 
-    // Fire non-blocking background OCR and encryption pipeline if entry has a document/image file
+    // Execute OCR and at-rest encryption pipeline before returning so external share
+    // activities do not terminate mid-encryption (`ISSUE-19`).
     if (filePath != null && filePath.isNotEmpty) {
-      unawaited(_processAndEncryptDocument(id, filePath, catKey));
+      await _processAndEncryptDocument(id, filePath, catKey);
     }
 
     // Fire non-blocking background OpenGraph link enrichment if entry has a clean URL
@@ -110,11 +125,12 @@ class ShareRepositoryImpl implements ShareRepository {
     }
 
     // 2. Encrypt at rest and remove plaintext from disk (Enterprise Guard 1)
+    // Preserves the original extension before `.enc` (e.g. `.jpg.enc`, `.pdf.enc`) (`ISSUE-05`).
     if (_vaultCryptoService != null && (catKey == 'docs' || catKey == 'tempVault')) {
       try {
         final file = File(filePath);
-        if (file.existsSync() && !filePath.endsWith('.enc')) {
-          final encPath = p.setExtension(filePath, '.enc');
+        if (file.existsSync() && !filePath.toLowerCase().endsWith('.enc')) {
+          final encPath = '$filePath.enc';
           await _vaultCryptoService.encryptFileAtRest(filePath, encPath);
           await _updateDao?.updateFilePath(id, encPath);
           debugPrint('🔒 [ShareRepositoryImpl] Encrypted document #$id at rest: $encPath');

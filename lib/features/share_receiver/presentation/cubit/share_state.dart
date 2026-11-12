@@ -13,14 +13,16 @@ sealed class ShareState extends Equatable {
 final class ShareInitial extends ShareState {
   final String rawPayload;
   final String? filePath;
+  final List<String> additionalFilePaths;
 
   const ShareInitial({
     required this.rawPayload,
     this.filePath,
+    this.additionalFilePaths = const [],
   });
 
   @override
-  List<Object?> get props => [rawPayload, filePath];
+  List<Object?> get props => [rawPayload, filePath, additionalFilePaths];
 }
 
 /// State emitted immediately when routing begins to trigger optimistic feedback.

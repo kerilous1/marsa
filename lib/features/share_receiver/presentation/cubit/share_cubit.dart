@@ -18,7 +18,37 @@ class ShareCubit extends Cubit<ShareState> {
     required this.fileStorageService,
     required String rawPayload,
     String? filePath,
-  }) : super(ShareInitial(rawPayload: rawPayload, filePath: filePath));
+    List<String> additionalFilePaths = const [],
+  }) : super(
+          ShareInitial(
+            rawPayload: rawPayload,
+            filePath: filePath,
+            additionalFilePaths: additionalFilePaths,
+          ),
+        );
+
+  /// Attaches a local image or PDF file picked directly inside the Quick Capture modal.
+  void attachFile(String pickedFilePath, {String? customTitle}) {
+    final current = state;
+    final existingPayload = current is ShareInitial ? current.rawPayload : '';
+    emit(
+      ShareInitial(
+        rawPayload: customTitle ??
+            (existingPayload.isNotEmpty
+                ? existingPayload
+                : p.basename(pickedFilePath)),
+        filePath: pickedFilePath,
+      ),
+    );
+  }
+
+  /// Clears any attached file inside the Quick Capture modal.
+  void clearAttachedFile() {
+    final current = state;
+    if (current is ShareInitial) {
+      emit(ShareInitial(rawPayload: current.rawPayload, filePath: null));
+    }
+  }
 
   /// Routes the payload to the selected vault category enum.
   Future<void> routePayload(VaultCategory category) async {
@@ -73,6 +103,23 @@ class ShareCubit extends Cubit<ShareState> {
           hasAutoPurge: hasAutoPurge,
         ),
       );
+
+      // Multi-file share support (`ACTION_SEND_MULTIPLE` — `ISSUE-20`):
+      // Persist all additional shared files into the same selected category.
+      for (final extraPath in currentState.additionalFilePaths) {
+        if (extraPath.trim().isEmpty) continue;
+        final extraOriginalName = p.basename(extraPath);
+        final copiedExtraPath = await fileStorageService.copyToVault(extraPath);
+        await routeRawPayloadUseCase(
+          RoutePayloadParams(
+            categoryKey: categoryKey,
+            category: catEnum,
+            rawPayload: extraOriginalName,
+            filePath: copiedExtraPath,
+            hasAutoPurge: hasAutoPurge,
+          ),
+        );
+      }
 
       emit(ShareSuccess(entryId: entryId, category: catEnum));
     } catch (e) {

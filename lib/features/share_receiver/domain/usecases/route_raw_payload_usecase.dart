@@ -1,5 +1,6 @@
 import '../../../../core/constants/vault_types.dart';
 import '../../../../core/services/payload_sanitizer.dart';
+import '../../../../core/utils/national_id_parser.dart';
 import '../repositories/share_repository.dart';
 
 /// Parameter object encapsulating the inputs required to route a shared payload.
@@ -34,6 +35,53 @@ class RouteRawPayloadUseCase {
   final ShareRepository _repository;
 
   const RouteRawPayloadUseCase(this._repository);
+
+  static final RegExp _otpOrTempKeywords = RegExp(
+    r'(?:رمز التحقق|كود التفعيل|كود التحقق|الرقم السري المتغير|صالح لمدة|otp|verification code|security code|passcode|one-time)',
+    caseSensitive: false,
+  );
+
+  static final RegExp _docKeywords = RegExp(
+    r'(?:الرقم القومي|بطاقة|جواز سفر|رخصة|شهادة|عقد|فاتورة|إيصال|ايصال|حساب بنكي|iban|invoice|receipt|passport|national id|contract)',
+    caseSensitive: false,
+  );
+
+  /// Smartly suggests the best default category key (`docs`, `readLater`, `tempVault`, `quickNotes`)
+  /// based on deterministic local heuristics (zero cloud / zero latency).
+  static String suggestSmartCategoryKey({
+    required String rawPayload,
+    String? filePath,
+  }) {
+    if (filePath != null && filePath.trim().isNotEmpty) {
+      return 'docs';
+    }
+
+    final text = rawPayload.trim();
+    if (text.isEmpty) return 'quickNotes';
+
+    // 1. OTP / temporary verification codes -> tempVault
+    if (_otpOrTempKeywords.hasMatch(text)) {
+      return 'tempVault';
+    }
+
+    // 2. Contains valid 14-digit Egyptian National ID -> docs
+    if (EgyptianNationalIdParser.extractAndParse(text) != null) {
+      return 'docs';
+    }
+
+    // 3. Contains a web URL -> readLater
+    final sanitized = PayloadSanitizer.sanitize(text);
+    if (sanitized.cleanUrl != null && sanitized.cleanUrl!.isNotEmpty) {
+      return 'readLater';
+    }
+
+    // 4. Financial / official document keywords -> docs
+    if (_docKeywords.hasMatch(text)) {
+      return 'docs';
+    }
+
+    return 'quickNotes';
+  }
 
   /// Executes the sanitization and storage workflow.
   Future<int> call(RoutePayloadParams params) async {

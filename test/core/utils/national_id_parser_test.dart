@@ -269,4 +269,63 @@ void main() {
       expect(raw, '29506152101234');
     });
   });
+
+  group('WP-4 — Future Date Guard, Mod-11 Checksum & OCR Resilience', () {
+    test('rejects future birth date (e.g. year 2099)', () {
+      // Century=3 (2000s), Year=99 (2099), Month=01, Day=01, Gov=01
+      expect(EgyptianNationalIdParser.parse('39901010101234'), isNull);
+    });
+
+    test('computes and validates official Mod-11 check digit', () {
+      // 2900101010123 -> weighted sum = 95 -> 95 % 11 = 7 -> 11 - 7 = 4
+      expect(EgyptianNationalIdParser.computeCheckDigit('2900101010123'), 4);
+      expect(EgyptianNationalIdParser.hasValidChecksum('29001010101234'), isTrue);
+      expect(EgyptianNationalIdParser.hasValidChecksum('29001010101239'), isFalse);
+
+      // Strict mode (enforceChecksum: true)
+      expect(
+        EgyptianNationalIdParser.parse('29001010101234', enforceChecksum: true),
+        isNotNull,
+      );
+      expect(
+        EgyptianNationalIdParser.parse('29001010101239', enforceChecksum: true),
+        isNull,
+      );
+    });
+
+    test('prioritizes candidate with valid check digit in noisy multi-number OCR text', () {
+      // First 14-digit number has invalid check digit (ends in 9 instead of 4),
+      // second 14-digit number has valid check digit (ends in 4).
+      const noisyMultiNumberText = '''
+        رقم المرجع: 29001010101239
+        الرقم القومي: 29001010101234
+      ''';
+      final result = EgyptianNationalIdParser.extractAndParse(noisyMultiNumberText);
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29001010101234');
+      expect(result.hasValidChecksum, isTrue);
+    });
+
+    test('extracts ID with Extended Arabic-Indic / Persian numerals (۰-۹)', () {
+      const extendedDigits = '۲۹۰۰۱۰۱۰۱۰۱۲۳۴';
+      final result = EgyptianNationalIdParser.extractAndParse(extendedDigits);
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29001010101234');
+    });
+
+    test('extracts ID from MRZ line without word boundaries (ID...<<<)', () {
+      const mrzLine = 'IDegy29001010101234<<<<<<<<<<<<';
+      final result = EgyptianNationalIdParser.extractAndParse(mrzLine);
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29001010101234');
+    });
+
+    test('recovers embossed ID when Latin OCR misreads 0 as O and 1 as I/l', () {
+      const misreadOcr = 'بطاقة الرقم القومي\n2 9O O1 OI O1 O123 4';
+      final result = EgyptianNationalIdParser.extractAndParse(misreadOcr);
+      expect(result, isNotNull);
+      expect(result!.nationalId, '29001010101234');
+      expect(result.governorate, 'القاهرة');
+    });
+  });
 }

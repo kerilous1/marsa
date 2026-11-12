@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +10,7 @@ import '../../../../core/widgets/marsa_logo_emblem.dart';
 import '../../../categories/domain/entities/category_entity.dart';
 import '../../../categories/presentation/cubit/categories_cubit.dart';
 import '../../../categories/presentation/cubit/categories_state.dart';
+import '../../domain/usecases/route_raw_payload_usecase.dart';
 import '../cubit/share_cubit.dart';
 import '../cubit/share_state.dart';
 
@@ -41,8 +43,31 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController();
+    _textController = TextEditingController()
+      ..addListener(() {
+        if (mounted) setState(() {});
+      });
     _newCategoryController = TextEditingController();
+  }
+
+  Future<void> _pickAttachment() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+      );
+      final pickedPath = result?.files.single.path;
+      if (pickedPath != null && mounted) {
+        context.read<ShareCubit>().attachFile(
+              pickedPath,
+              customTitle: _textController.text.trim().isNotEmpty
+                  ? _textController.text.trim()
+                  : null,
+            );
+      }
+    } catch (e) {
+      debugPrint('Error picking attachment: $e');
+    }
   }
 
   @override
@@ -212,7 +237,7 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
                   const SizedBox(height: 12),
 
                   // Content Preview Card
-                  if (isManualCapture)
+                  if (isManualCapture) ...[
                     TextField(
                       controller: _textController,
                       maxLines: 3,
@@ -236,8 +261,24 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
                           ),
                         ),
                       ),
-                    )
-                  else
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: isSaving ? null : _pickAttachment,
+                        icon: const Icon(Icons.attach_file_rounded, size: 18),
+                        label: Text(
+                          Localizations.localeOf(context).languageCode == 'ar'
+                              ? 'إرفاق صورة أو ملف PDF'
+                              : 'Attach Image or PDF',
+                        ),
+                      ),
+                    ),
+                  ] else
                     _buildPayloadPreview(context, rawPayload, filePath),
 
                   const SizedBox(height: 14),
@@ -250,6 +291,15 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
                     BlocBuilder<CategoriesCubit, CategoriesState>(
                       builder: (context, catState) {
                         final categories = catState.categories;
+                        final activeText = _textController.text.trim().isNotEmpty
+                            ? _textController.text.trim()
+                            : rawPayload;
+                        final suggestedKey = (activeText.isNotEmpty || filePath != null)
+                            ? RouteRawPayloadUseCase.suggestSmartCategoryKey(
+                                rawPayload: activeText,
+                                filePath: filePath,
+                              )
+                            : null;
 
                         return LayoutBuilder(
                           builder: (context, constraints) {
@@ -284,6 +334,7 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
                                 final cat = categories[index];
                                 return _DynamicCategoryTile(
                                   category: cat,
+                                  isSuggested: suggestedKey == cat.key,
                                   isDisabled: isSaving,
                                   onTap: () {
                                     final explicitText = _textController.text.trim();
@@ -513,11 +564,13 @@ class _QuickRouterModalState extends State<QuickRouterModal> {
 
 class _DynamicCategoryTile extends StatelessWidget {
   final CategoryEntity category;
+  final bool isSuggested;
   final bool isDisabled;
   final VoidCallback onTap;
 
   const _DynamicCategoryTile({
     required this.category,
+    this.isSuggested = false,
     required this.isDisabled,
     required this.onTap,
   });
@@ -539,11 +592,13 @@ class _DynamicCategoryTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: theme.cardColor,
+            color: isSuggested
+                ? color.withValues(alpha: 0.08)
+                : theme.cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: color.withValues(alpha: 0.3),
-              width: 1.0,
+              color: color.withValues(alpha: isSuggested ? 0.85 : 0.3),
+              width: isSuggested ? 1.6 : 1.0,
             ),
           ),
           child: Row(
@@ -562,14 +617,26 @@ class _DynamicCategoryTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      name,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isSuggested)
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 14,
+                            color: color,
+                          ),
+                      ],
                     ),
                     if (category.hasAutoPurge)
                       Text(
